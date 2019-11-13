@@ -1,0 +1,1 @@
+test1.exe > output.txt < input.txt

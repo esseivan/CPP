@@ -1,0 +1,1 @@
+Measure-Command {./run.bat } > time.txt
