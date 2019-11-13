@@ -3,52 +3,95 @@
 #include <ctime>
 #include <fstream>
 
-#define ShowLog true
+#define ShowLog false
+
+#define matrice vector<vector<bool>>
+
+#define MODE 1
 
 using namespace std;
 
 // Prototypes
-int GenerateGrid(vector<std::vector<bool>> &grid, int lines, int cols, int librePercentage);
-int ExportGrid(const vector<std::vector<bool>> &grid, int lines, int cols, std::string path);
-	
+bool ReadGrid(matrice &grid);
+matrice GenerateGrid(int lines, int cols, int librePercentage);
+bool ExportGrid(const matrice &grid, int lines, int cols, string path);
+void Write(string msg);
+void WriteLn(string msg);
+
 int main() {
-	cout << "Application started" << endl;
+	WriteLn("Application started");
+	// Initialisation du random
 	srand(time(0));
 	
-	// Generate grid map
-	int nLine;
-	int nCol;
-	int perc;
-	cout << "Enter the number of lines" << endl;
-	cin >> nLine;
-	cout << "Enter the number of columns : " << endl;
-	cin >> nCol;
-	cout << "Enter the percentage of available cell : " << endl;
-	cin >> perc;
+	matrice libre;
+	matrice passage;
 	
-	if(nLine <= 0 || nCol <= 0 || perc < 0 || perc > 100) {
-		cout << "Invalid row / line / percentage amount" << endl;
-		return 2;
+	string mode;
+	cin >> mode;
+	
+	if(mode ==  "a") {
+		// Importation depuis cin
+		if(!ReadGrid(libre))
+			return 2;
+			
+			
+	} else {
+		cout << "ERROR : Unknown mode : " << mode << endl;
+		return 1;
 	}
-	cout << "Valid row & lines" << endl;
-	cout << nLine << " line(s)" << endl;
-	cout << nCol << " col(s)" << endl;
 	
-	vector<vector<bool>> libre(nLine, vector<bool>(nCol, false));
 	
-	GenerateGrid(libre, nLine, nCol, perc);
-	ExportGrid(libre, nLine, nCol, "grid.pbm");
+		
+		
 	
-	cout << "Application ended" << endl;
+	
+	
+	WriteLn("Application ended");
 	
 	return 0;
 }
 
+bool ReadGrid(matrice &grid) {
+	// Generate grid map
+	
+	// Demander les entrées
+	int n;
+	WriteLn("Enter the side of the square:");
+	cin >> n;
+	
+	if(n <= 0) {
+		WriteLn("Invalid value : " + to_string(n));
+		return false;
+	}
+	
+	matrice grid2(n, vector<bool>(n));
+	
+	bool temp;
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			cin >> temp;
+			grid2[i][j] = temp;
+			
+			Write(to_string(temp) + " ");
+			if(j == 70)
+				WriteLn("");
+		}
+		WriteLn("");
+	}
+	
+	grid = grid2;
+	
+	return true;
+}
+
 // Génération d'une grille aléatoire
-int GenerateGrid(vector<vector<bool>> &grid, int lines, int cols, int librePercentage) {
+matrice GenerateGrid(int lines, int cols, int librePercentage) {
+	matrice grid(lines, vector<bool>(cols, false));
+	
 	int rndValue;
-	if(ShowLog)
-		cout << "Grid initialized as follow : " << endl;
+	WriteLn("Grid initialized as follow : ");
 	for (int i = 0; i < lines; i++)
 	{
 		for (int j = 0; j < cols; j++)
@@ -56,38 +99,49 @@ int GenerateGrid(vector<vector<bool>> &grid, int lines, int cols, int librePerce
 			rndValue = rand() % 100 + 1;
 			grid[i][j] = (rndValue <= librePercentage);
 			
-			if(ShowLog)
-				cout << grid[i][j] << " ";
+			Write(grid[i][j] + " ");
 		}
-		if(ShowLog)
-			cout << endl;
+		WriteLn("");
 	}
-	return 0;
+	return grid;
 }
 
 // Exportation de la grille en un fichier pbm
-int ExportGrid(const vector<vector<bool>> &grid, int lines, int cols, string path) {
+bool ExportGrid(const matrice &grid, int lines, int cols, string path) {
 	ofstream fs(path);
 	
 	if(!fs) {
-		cout << "Cannot open the output file" << endl;
-		return 3;
+		WriteLn("Cannot open the output file");
+		return false;
 	}
 	
 	fs << "P1" << endl;
+	cout << "P1" << endl;
 	fs << lines << " " << cols << endl;
+	cout << lines << " " << cols << endl;
 	
 	for (int i = 0; i < lines; i++)
 	{
 		for (int j = 0; j < cols; j++)
 		{
 			fs << !grid[i][j] << " ";
+			cout << !grid[i][j] << " ";
 		}
-		fs << endl;
+		cout << endl;
 	}
 	
 	fs.close();
 	
-	cout << "Grid exported to " << path << endl;
-	return 0;
+	WriteLn("Grid exported to " + path);
+	return true;
+}
+
+void Write(string msg) {
+	if(ShowLog)
+		cout << msg;
+}
+
+void WriteLn(string msg) {
+	if(ShowLog)
+		cout << msg << endl;
 }

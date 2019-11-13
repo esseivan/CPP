@@ -1,0 +1,1 @@
+miniprojet_generation.exe > output_a.txt < input_a.txt
