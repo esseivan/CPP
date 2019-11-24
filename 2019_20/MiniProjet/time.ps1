@@ -1,1 +1,1 @@
-Measure-Command {./run.bat } > time.txt
+Measure-Command {./run_c.bat } > time/time.txt

@@ -1,1 +1,2 @@
-miniprojet_generation.exe > output_a.txt < input_a.txt
+miniprojet_generation.exe > output/output_b.pbm < a/fig1.txt
+start output/output_b.pbm

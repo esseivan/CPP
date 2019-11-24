@@ -1,3 +1,2 @@
 Powershell.exe -File time.ps1
-"time.txt"
-"output.txt"
+"time/time.txt"
