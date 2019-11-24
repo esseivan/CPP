@@ -4,6 +4,7 @@
 #include <fstream>
 #include <random>
 #include <iomanip>
+#include <algorithm>
 
 #define ShowLog false
 
@@ -11,6 +12,21 @@
 
 using namespace std;
 
+struct Point {
+	double p;
+	double pPrime;
+	
+	Point(double p, double pPrime) {
+		this->p = p;
+		this->pPrime = pPrime;
+	}
+};
+
+struct Range {
+	double min;
+	double max;
+};
+	
 // Prototypes
 /**** a ****/
 // Lecture d'une grille depuis l'entrée
@@ -27,16 +43,20 @@ bool ExportMap(const matrice &libre, const matrice &passage, string path);
 
 // Calcul du passage : méthode récursive
 bool calculer_passage(const matrice &libre, matrice &passage);
-bool construire_passage(int line, int column, const matrice &libre, matrice &passage);
+void construire_passage(int line, int column, const matrice &libre, matrice &passage, bool &isLastLineReached);
 
-int calcualte_all_grids(matrice &libre, matrice &passage, int n, double p, int nbt, bernoulli_distribution &b, default_random_engine &e);
+int calculate_all_grids(int n, double p, int nbt, bernoulli_distribution &b, default_random_engine &e);
+
+void calcul_dichotomique(double min, double max, vector<Point> &points, double minPrime, double maxPrime,
+			// Suite des paramètres pour l'appel de calculate_all_grids
+			int n, int nbt, default_random_engine &e);
+
+bool comparePoints(Point p1, Point p2);
+
 
 int main() {
 	// Initialisation du random
 	srand(time(0));
-	
-	matrice libre;
-	matrice passage;
 	
 	// Lecture du mode
 	string mode;
@@ -44,6 +64,9 @@ int main() {
 	
 	// Mode a
 	if(mode ==  "a") {
+		matrice libre;
+		matrice passage;
+	
 		// Importation depuis cin
 		int n = ReadGrid(libre);
 		
@@ -83,7 +106,7 @@ int main() {
 		default_random_engine e;
 		
 		// Le nombre de terrains ayant un passage
-		int nombreTerrainPassage = calcualte_all_grids(libre, passage, n, p, nbt, b, e);
+		int nombreTerrainPassage = calculate_all_grids(n, p, nbt, b, e);
 		
 		// Output p'
 		double pPrime = (double)nombreTerrainPassage/nbt;
@@ -100,17 +123,33 @@ int main() {
 		default_random_engine e;
 		
 		// Nombre de points
-		constexpr int NBP(102);
-		constexpr double step(1. / (NBP - 1));
-		double p(0);
+		//int NBP(102);
 		
-		for (int i = 0; i < NBP; i++)
+		// dichotomique
+		vector<Point> points;
+		points.push_back(Point(0,0));
+		points.push_back(Point(1,1));
+		calcul_dichotomique(0, 1, points, 0, 1, n, nbt, e);
+		
+		sort(points.begin(), points.end(), comparePoints);
+		
+		for (size_t i = 0; i < points.size(); i++)
 		{
-			bernoulli_distribution b(p); //booléen true avec une probabilité p
-			
-			cout << p << " " << (double)calcualte_all_grids(libre, passage, n, p, nbt, b, e)/nbt << endl;
-			p += step;
+			cout << points[i].p << " " << points[i].pPrime << endl;
 		}
+		
+		// normale
+		//constexpr double step(1. / (NBP - 1));
+		//double p(0);
+		
+		//for (int i = 0; i < NBP; i++)
+		//{
+			//bernoulli_distribution b(p); //booléen true avec une probabilité p
+			
+			//cout << p << " " << (double)calculate_all_grids(n, p, nbt, b, e)/nbt << endl;
+			//p += step;
+		//}
+		
 	} else {
 		cout << "ERROR : Unknown mode : " << mode << endl;
 		return 1;
@@ -119,8 +158,15 @@ int main() {
 	return 0;
 }
 
+bool comparePoints(Point p1, Point p2) {
+	return (p1.p < p2.p);
+}
+
 // Génération de nbt grilles et retourne le nombre de grilles qui ont une 'traversée'
-int calcualte_all_grids(matrice &libre, matrice &passage, int n, double p, int nbt, bernoulli_distribution &b, default_random_engine &e) {
+int calculate_all_grids(int n, double p, int nbt, bernoulli_distribution &b, default_random_engine &e) {
+	matrice libre;
+	matrice passage;
+	
 	// Le nombre de terrains ayant un passage
 	int nombreTerrainPassage = 0;
 	
@@ -150,30 +196,17 @@ bool calculer_passage(const matrice &libre, matrice &passage) {
 		if(libre[0][i])
 		{
 			// Appeler la fonction construire_passage_recursif pour cette cellule
-			if(construire_passage(0, i, libre, passage) && !isTraversee)
-				isTraversee = true;
+			construire_passage(0, i, libre, passage, isTraversee);
 		}
 	}
 	return isTraversee;
 }
 
-// Indique si la traversée est faisable
-bool passage_traversee(const matrice &passage) {
-	int columns = passage[0].size();
-	int lastLine = passage.size() - 1;
-	for (int i = 0; i < columns; i++)
-	{
-		if(passage[lastLine][i])
-			return true;
-	}
-	return false;
-}
-
 // Valider le passage pour cette cellule et vérifier celles adjacentes
-bool construire_passage(int line, int column, const matrice &libre, matrice &passage) {
+void construire_passage(int line, int column, const matrice &libre, matrice &passage, bool &isLastLineReached) {
 	// Si passage déjà fait, cellule déjà visitée
 	if(passage[line][column])
-		return false;
+		return;
 	
 	passage[line][column] = true;
 	
@@ -184,26 +217,53 @@ bool construire_passage(int line, int column, const matrice &libre, matrice &pas
 	// en haut
 	if(line > 0)
 		if(libre[line-1][column])
-			construire_passage(line-1, column, libre, passage);
+			construire_passage(line-1, column, libre, passage, isLastLineReached);
 			
 	// à gauche
 	if(column > 0)
 		if(libre[line][column-1])
-			construire_passage(line, column-1, libre, passage);
+			construire_passage(line, column-1, libre, passage, isLastLineReached);
 			
 	// en bas
 	if((line+1) < lines)
 		if(libre[line+1][column])
-			construire_passage(line+1, column, libre, passage);
+			construire_passage(line+1, column, libre, passage, isLastLineReached);
 	
 	// à droite
 	if((column+1) < columns)
 		if(libre[line][column+1])
-			construire_passage(line, column+1, libre, passage);
+			construire_passage(line, column+1, libre, passage, isLastLineReached);
 			
 	if((line+1) == lines)
-		return true;
-	return false;
+		isLastLineReached = true;
+}
+
+void calcul_dichotomique(double min, double max, vector<Point> &points, double minPrime, double maxPrime,
+			// Suite des paramètres pour l'appel de calculate_all_grids
+			int n, int nbt, default_random_engine &e) {
+	constexpr double MIN_DELTA_P(0.000001); // 10^-6
+	constexpr double MAX_ERROR(0.01); // 10^-2
+	
+	// Recherche des points
+	double p((min+max)/2);
+	bernoulli_distribution b(p); //booléen true avec une probabilité p
+	int nb_traversee = calculate_all_grids(n, p, nbt, b, e);
+	double pPrime((double)nb_traversee/nbt);
+	
+	double error(pPrime - (minPrime+maxPrime)/2);
+	
+	// Sauvegarde du point (p,p')
+	Point currentPoint(p,pPrime);
+	points.push_back(currentPoint);
+	
+	// Vérification des conditions
+	if((max-min) < MIN_DELTA_P)
+		return;
+	
+	if(error < -MAX_ERROR)
+		calcul_dichotomique(p, max, points, pPrime, maxPrime, n, nbt, e);
+	else if(error > MAX_ERROR)
+		calcul_dichotomique(min, p, points, minPrime, pPrime, n, nbt, e);
 }
 
 // Lecture d'une grille depuis l'entrée

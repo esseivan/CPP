@@ -1,0 +1,23 @@
+entrées : n, nbt
+
+plage = [0,1] ( = [min,max])
+
+NBP = nombre de points ( e.x. = 102)
+
+ajouter les points (0,0) et (1,1) dans la liste des points
+
+Pour i de 0 à NBP :
+    mid = (min+max)/2   (min = plage[0], max = plage[1])
+    calculer p' en mid
+    ajouter le point (p, p') dans la liste des points
+    calculer l'erreur absolue
+    si l'erreur (absolue) est plus petite que MAX_ERROR
+         ? arrêter, continuer sur une autre plage ??
+    sinon
+        Si l'erreur est positive
+            diviser la plage en [min, mid]
+        Si l'erreur est négative
+            diviser la plage en [mid, max]
+
+Trier la liste de points
+sortir les points sous forme d'image pbm
