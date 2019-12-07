@@ -1,3 +1,5 @@
+echantillonnage_adaptif
+entrée : 
 entrées : n, nbt
 
 plage = [0,1] ( = [min,max])
